@@ -405,7 +405,7 @@
             if(mode === 'ipo') {
                 document.getElementById('app-wrapper-ipo').classList.remove('hidden'); document.getElementById('nav-ipo').classList.remove('hidden');
                 document.getElementById('app-wrapper-stocks').classList.add('hidden'); document.getElementById('nav-stocks').classList.add('hidden');
-                btnIpo.className = 'flex-1 py-3.5 text-[11px] font-black tracking-[0.15em] rounded-xl bg-white dark:bg-carddark text-indigo-600 dark:text-indigo-400 shadow-sm transition-all duration-300 flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-700/50';
+                btnIpo.className = 'flex-1 py-3.5 text-[11px] font-black tracking-[0.15em] rounded-xl bg-white dark:bg-carddark text-indigo-600 dark:text-indigo-400 shadow-[0_2px_10px_rgba(0,0,0,0.05)] transition-all duration-300 flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-700/50';
                 btnStock.className = 'flex-1 py-3.5 text-[11px] font-black tracking-[0.15em] rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all duration-300 flex items-center justify-center gap-2 border border-transparent';
                 renderIPO_UI();
             } else {
@@ -559,7 +559,6 @@
             if(tabId === 'dashboard') renderIPOHistoricalChart();
         };
 
-        // YENİ PROGRESS BAR'LI KART ÜRETİCİSİ
         const genIPOCard = (ipo, isOther) => {
             const isLoss = ipo.profit < 0; const pC = isLoss ? 'text-rose-500' : 'text-emerald-500'; const sign = isLoss ? '' : '+';
             const colorClass = isOther ? 'fuchsia' : 'indigo'; const borderLine = isOther ? 'bg-fuchsia-500' : 'bg-indigo-500';
@@ -726,6 +725,16 @@
         };
 
         // =========================================================================
+        // YENİ EKLENEN KOD: Halka Arz Fiyatları Sözlüğü
+        // =========================================================================
+        const halkaArzFiyatlari = {
+            "ARFYE": 19.50, "MEYSU": 7.50, "ZGYO": 9.77, "FRMPL": 30.24,
+            "UCAYM": 18.00, "NETCD": 46.00, "AKHAN": 21.50, "BESTE": 14.70,
+            "ATATR": 11.20, "EMPAE": 22.00, "SVGYO": 3.64, "GENKM": 11.00,
+            "LXGYO": 12.05, "MCARD": 80.00, "AAGYO": 21.10
+        };
+
+        // =========================================================================
         // BÖLÜM 2: MİDAS BORSA (STOCKS)
         // =========================================================================
         const defaultStockData = [ { tarih: "2026-02-09", hisse: "UCAY", adet: 5, fiyat: 36.32 }, { tarih: "2026-02-09", hisse: "FORMT", adet: 5, fiyat: 39.18 }, { tarih: "2026-02-09", hisse: "MEYSU", adet: 5, fiyat: 15.84 }, { tarih: "2026-02-09", hisse: "ARFBE", adet: 5, fiyat: 29.98 }, { tarih: "2026-02-09", hisse: "THYAO", adet: 2, fiyat: 326.50 }, { tarih: "2026-02-09", hisse: "TUPRS", adet: 1, fiyat: 222.70 }, { tarih: "2026-02-09", hisse: "GRSEL", adet: 1, fiyat: 352.25 }, { tarih: "2026-02-09", hisse: "ASTOR", adet: 1, fiyat: 154.30 }, { tarih: "2026-02-09", hisse: "ENKAI", adet: 1, fiyat: 96.90 }, { tarih: "2026-02-09", hisse: "TABGD", adet: 1, fiyat: 257.00 }, { tarih: "2026-02-09", hisse: "PGSUS", adet: 1, fiyat: 209.30 }, { tarih: "2026-02-09", hisse: "AKSEN", adet: 1, fiyat: 69.25 }, { tarih: "2026-02-09", hisse: "GARAN", adet: 1, fiyat: 157.30 }, { tarih: "2026-02-09", hisse: "TCELL", adet: 1, fiyat: 115.90 }, { tarih: "2026-02-09", hisse: "OYAKC", adet: 1, fiyat: 26.14 }, { tarih: "2026-02-09", hisse: "ALTNY", adet: 1, fiyat: 15.73 }, { tarih: "2026-02-09", hisse: "AKSEN", adet: 2, fiyat: 69.10 }, { tarih: "2026-02-09", hisse: "OYAKC", adet: 2, fiyat: 26.12 }, { tarih: "2026-02-09", hisse: "ALTNY", adet: 1, fiyat: 15.71 }, { tarih: "2026-03-11", hisse: "GRSEL", adet: 2, fiyat: 329.00 }, { tarih: "2026-03-11", hisse: "TUPRS", adet: 3, fiyat: 253.25 }, { tarih: "2026-03-11", hisse: "ASTOR", adet: 3, fiyat: 191.50 }, { tarih: "2026-03-11", hisse: "AKSEN", adet: 5, fiyat: 72.60 }, { tarih: "2026-03-11", hisse: "ENKAI", adet: 5, fiyat: 91.30 }, { tarih: "2026-03-11", hisse: "TCELL", adet: 3, fiyat: 110.00 }, { tarih: "2026-03-18", hisse: "AKSA", adet: 84, fiyat: 11.21 }, { tarih: "2026-03-18", hisse: "GRSEL", adet: 1, fiyat: 324.25 }, { tarih: "2026-03-18", hisse: "ASELS", adet: 3, fiyat: 354.75 }, { tarih: "2026-03-18", hisse: "PGSUS", adet: 6, fiyat: 179.70 }, { tarih: "2026-03-18", hisse: "AKSEN", adet: 5, fiyat: 79.70 }, { tarih: "2026-03-18", hisse: "AKSA", adet: 9, fiyat: 11.19 } ];
@@ -775,7 +784,22 @@
         const saveStockTransaction = () => { let t = document.getElementById("stock-date").value; let h = document.getElementById("stock-ticker").value.trim().toUpperCase(); let a = parseInt(document.getElementById("stock-qty").value); let f = parseFloat(document.getElementById("stock-price").value.replace(',','.')); if(!t || !h || isNaN(a) || isNaN(f)) return alert("Eksik bilgi!"); dbStocks.push({ tarih:t, hisse:h, adet:a, fiyat:f }); saveStocksDB(); renderStocksUI(); closeModal('add-stock-modal'); switchStockTab('history'); };
 
         // INIT
-        window.onload = () => { switchAppMode('ipo'); setTimeout(renderIPOHistoricalChart, 100); };
+        window.onload = () => { 
+            switchAppMode('ipo'); 
+            setTimeout(renderIPOHistoricalChart, 100); 
+
+            // =========================================================================
+            // YENİ EKLENEN KOD: Dinleyici (Event Listener)
+            // =========================================================================
+            document.getElementById("stock-ticker").addEventListener("input", function() {
+                let girilenHisse = this.value.trim().toUpperCase();
+                
+                // Eğer yazılan hisse sözlüğümüzde varsa, fiyatı yazdır
+                if (halkaArzFiyatlari[girilenHisse] !== undefined) {
+                    document.getElementById("stock-price").value = halkaArzFiyatlari[girilenHisse];
+                }
+            });
+        };
     </script>
 </body>
 </html>
