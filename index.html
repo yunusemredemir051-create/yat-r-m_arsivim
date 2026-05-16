@@ -1,366 +1,781 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mobil Portföy Uygulaması</title>
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #34495e;
-            --success: #27ae60;
-            --danger: #e74c3c;
-            --bg-color: #f4f6f8;
-            --card-bg: #ffffff;
-            --border: #e1e4e8;
-            --active-tab: #3498db;
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Finans Merkezi Ultimate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { oled: '#0a0a0c', carddark: '#131316', surface: '#1c1c21' }
+                } 
+            }
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: var(--bg-color); color: #333; margin: 0; padding: 0; padding-bottom: 70px; }
+    </script>
+    <style>
+        :root { overscroll-behavior: none; }
+        body { -webkit-font-smoothing: antialiased; margin: 0; padding: 0; height: 100dvh; overflow: hidden; overscroll-behavior: none; }
+        #main-scroll { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; padding-bottom: 150px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Üst Başlık */
-        .header { background: var(--primary); color: white; padding: 15px; text-align: center; font-size: 1.2rem; font-weight: bold; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); filter: blur(2px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
         
-        .container { padding: 15px; max-width: 800px; margin: auto; }
+        .glass-nav { background: rgba(255,255,255,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-top: 1px solid rgba(255,255,255,0.6); }
+        .dark .glass-nav { background: rgba(19,19,22,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-top: 1px solid rgba(255,255,255,0.05); }
         
-        /* Sekme Sistemi (Gösterme/Gizleme) */
-        .tab-content { display: none; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Form ve Kartlar */
-        .card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        h2 { color: var(--primary); margin-top: 0; font-size: 1.3rem; border-bottom: 2px solid var(--bg-color); padding-bottom: 10px; }
-        
-        .form-group { display: flex; flex-direction: column; gap: 12px; }
-        input { padding: 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: #fafbfc; outline: none; }
-        input:focus { border-color: var(--active-tab); background: white; }
-        button.ekle-btn { padding: 15px; background-color: var(--success); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 5px; }
-        button.sil-btn { padding: 6px 12px; background-color: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
-
-        /* Tablolar */
-        .table-responsive { width: 100%; overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; background: var(--card-bg); white-space: nowrap; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
-        th { background-color: var(--secondary); color: white; font-weight: 500; }
-        tr:nth-child(even) { background-color: #f8f9fa; }
-        
-        .genel-toplam { font-size: 1.2rem; font-weight: 800; color: var(--danger); text-align: center; background: #fee2e2; padding: 15px; border-radius: 8px; margin-top: 15px; }
-        .aylik-toplam { text-align: right; font-weight: bold; background: #e9ecef; color: var(--primary); }
-
-        /* ALT MENÜ (Uygulama Navigasyonu) */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; box-shadow: 0 -2px 10px rgba(0,0,0,0.08); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { flex: 1; padding: 12px 0; text-align: center; color: #7f8c8d; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; border-top: 3px solid transparent; transition: 0.2s; }
-        .nav-item.active { color: var(--active-tab); border-top: 3px solid var(--active-tab); }
-        .nav-icon { font-size: 20px; }
+        * { transition: background-color 0.3s ease, border-color 0.3s ease; }
+        table { width: 100%; text-align: left; border-collapse: collapse; }
+        th { font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.65rem; padding: 1rem 0.5rem; }
+        td { font-size: 0.85rem; font-weight: 700; padding: 1.25rem 0.5rem; }
     </style>
 </head>
-<body>
+<body class="flex flex-col font-sans bg-[#f8fafc] dark:bg-oled text-slate-800 dark:text-slate-100 transition-colors">
 
-<div class="header">Midas Portföyüm 📈</div>
+    <div id="scroll-assistant" class="fixed right-2.5 bottom-[105px] z-50 flex flex-col bg-slate-900/30 dark:bg-white/10 backdrop-blur-md rounded-full p-1 opacity-0 translate-y-4 pointer-events-none transition-all duration-300 border border-white/20 shadow-lg">
+        <button onclick="scrollStep(-1)" class="p-1.5 text-white/90 hover:text-white active:scale-90 transition-transform">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>
+        </button>
+        <div class="w-3 h-[1px] bg-white/20 mx-auto rounded-full my-0.5"></div>
+        <button onclick="scrollStep(1)" class="p-1.5 text-white/90 hover:text-white active:scale-90 transition-transform">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+    </div>
 
-<div class="container">
-    
-    <!-- SEKMELER (TABS) -->
-    
-    <!-- BÖLÜM 1: İŞLEM EKLE & GEÇMİŞ -->
-    <div id="tab-islem" class="tab-content active">
-        <div class="card">
-            <h2>➕ Yeni İşlem Gir</h2>
-            <div class="form-group">
-                <input type="date" id="tarih" required>
-                <input type="text" id="hisse" placeholder="Hisse Kodu (örn: THYAO)" required style="text-transform: uppercase;">
-                <input type="number" id="adet" placeholder="Lot Adedi" required min="1">
-                <input type="number" id="fiyat" placeholder="Birim Fiyat (TL)" step="0.01" required>
-                <button class="ekle-btn" onclick="veriEkle()">Kaydet</button>
+    <header class="bg-white dark:bg-carddark pt-14 pb-6 px-6 flex flex-col shrink-0 z-30 relative rounded-b-[2.5rem] shadow-[0_10px_30px_rgba(0,0,0,0.02)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.3)] border-b border-slate-100 dark:border-slate-800/50">
+        <div class="flex justify-between items-center w-full mb-7">
+            <div class="flex flex-col">
+                <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 tracking-[0.25em] uppercase mb-1">Portföy Yönetimi</span>
+                <span class="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Yunus Emre</span>
+            </div>
+            
+            <div class="flex gap-2">
+                <button onclick="exportData()" class="bg-indigo-50 dark:bg-indigo-900/20 p-3.5 rounded-[1rem] text-indigo-600 dark:text-indigo-400 active:scale-95 transition-transform shadow-inner border border-indigo-100 dark:border-indigo-800/50">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </button>
+                <button onclick="toggleDarkMode()" class="bg-slate-50 dark:bg-surface p-3.5 rounded-[1rem] text-slate-600 dark:text-amber-400 active:scale-95 transition-transform shadow-inner border border-slate-100 dark:border-slate-800">
+                    <svg id="theme-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                </button>
+            </div>
+        </div>
+        
+        <div class="flex bg-slate-50 dark:bg-surface p-1.5 rounded-[1.25rem] w-full relative border border-slate-200/60 dark:border-slate-800 shadow-inner">
+            <button id="mode-ipo" onclick="switchAppMode('ipo')" class="flex-1 py-3.5 text-[11px] font-black tracking-[0.15em] rounded-xl bg-white dark:bg-carddark text-indigo-600 dark:text-indigo-400 shadow-[0_2px_10px_rgba(0,0,0,0.05)] transition-all duration-300 flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-700/50">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                HALKA ARZ
+            </button>
+            <button id="mode-stocks" onclick="switchAppMode('stocks')" class="flex-1 py-3.5 text-[11px] font-black tracking-[0.15em] rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all duration-300 flex items-center justify-center gap-2 border border-transparent">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                HİSSE / BORSA
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 p-5 md:p-8 no-scrollbar" id="main-scroll">
+        
+        <div id="app-wrapper-ipo">
+            <div id="view-dashboard" class="app-view fade-in">
+                <div class="relative bg-slate-900 dark:bg-carddark rounded-[2.5rem] p-8 md:p-10 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.15)] text-white mb-8 overflow-hidden border border-slate-800/80">
+                    <div class="absolute top-8 right-8 text-white/10">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 21a3 3 0 100-6 3 3 0 000 6zM16 15a3 3 0 100-6 3 3 0 000 6z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9v6m8-6l-4 3m4 3l-4-3"></path></svg>
+                    </div>
+                    <div class="absolute -top-12 -right-12 w-56 h-56 bg-indigo-500 opacity-40 rounded-full blur-[3.5rem] pointer-events-none"></div>
+                    <div class="absolute -bottom-12 -left-12 w-56 h-56 bg-emerald-500 opacity-35 rounded-full blur-[3.5rem] pointer-events-none"></div>
+                    
+                    <div class="relative z-10 mt-6">
+                        <span class="block text-slate-300 text-[11px] font-black mb-2 uppercase tracking-[0.3em]">Net Toplam Kâr</span>
+                        <span id="grand-total-profit" class="text-4xl md:text-6xl font-black truncate block tracking-tighter text-white transition-all duration-300 drop-shadow-lg">0,00 ₺</span>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/60 rounded-[2.5rem] p-7 shadow-sm mb-8">
+                    <h3 class="text-[12px] font-black text-slate-500 dark:text-slate-400 mb-5 uppercase tracking-[0.2em] flex items-center gap-2.5">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                        Analiz
+                    </h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="ipoProfitChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-5 mb-8">
+                    <div onclick="switchTab('ongoing')" class="bg-white dark:bg-carddark rounded-[2rem] p-6 border border-slate-200/60 dark:border-slate-800/60 shadow-sm active:scale-[0.97] transition-transform cursor-pointer flex flex-col justify-between">
+                        <div class="w-12 h-12 bg-indigo-50 dark:bg-surface text-indigo-600 dark:text-indigo-400 rounded-[1.25rem] flex items-center justify-center mb-4 border border-indigo-100 dark:border-slate-800">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1.5">Aktif</span>
+                            <span id="stat-ongoing" class="text-3xl md:text-4xl font-black text-slate-800 dark:text-white leading-none tracking-tight">0</span>
+                        </div>
+                    </div>
+                    <div onclick="switchTab('completed')" class="bg-white dark:bg-carddark rounded-[2rem] p-6 border border-slate-200/60 dark:border-slate-800/60 shadow-sm active:scale-[0.97] transition-transform cursor-pointer flex flex-col justify-between">
+                        <div class="w-12 h-12 bg-emerald-50 dark:bg-surface text-emerald-600 dark:text-emerald-400 rounded-[1.25rem] flex items-center justify-center mb-4 border border-emerald-100 dark:border-slate-800">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1.5">Satılan</span>
+                            <span id="stat-completed" class="text-3xl md:text-4xl font-black text-slate-800 dark:text-white leading-none tracking-tight">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 class="text-[12px] font-black text-slate-500 dark:text-slate-400 mb-5 uppercase tracking-[0.2em] px-2 flex items-center gap-2.5 mt-10">
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                    Kazandıranlar
+                </h3>
+                <div id="top-earners-container" class="space-y-4"></div>
+            </div>
+
+            <div id="view-ongoing" class="app-view hidden fade-in">
+                <div class="flex justify-between items-center mb-6 px-2">
+                    <h2 class="text-[12px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Aktif Hisseler
+                    </h2>
+                    <select id="sort-ongoing" onchange="changeSort('ongoing', this.value)" class="bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 text-slate-700 dark:text-slate-300 text-[10px] font-black tracking-widest py-2.5 px-4 rounded-xl outline-none shadow-sm">
+                        <option value="dateDesc">EN YENİ</option>
+                        <option value="profitDesc">EN ÇOK KAZANDIRAN</option>
+                        <option value="profitAsc">ZARAR EDENLER</option>
+                    </select>
+                </div>
+                <div class="grid gap-6" id="ongoing-container"></div>
+            </div>
+            
+            <div id="view-completed" class="app-view hidden fade-in">
+                <div class="flex justify-between items-center mb-6 px-2">
+                    <h2 class="text-[12px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        Satılanlar
+                    </h2>
+                    <select id="sort-completed" onchange="changeSort('completed', this.value)" class="bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 text-slate-700 dark:text-slate-300 text-[10px] font-black tracking-widest py-2.5 px-4 rounded-xl outline-none shadow-sm">
+                        <option value="dateDesc">EN YENİ</option>
+                        <option value="profitDesc">EN ÇOK KAZANDIRAN</option>
+                    </select>
+                </div>
+                <div class="grid gap-6" id="completed-container"></div>
+            </div>
+
+            <div id="view-other" class="app-view hidden fade-in">
+                <div class="relative bg-slate-900 dark:bg-carddark rounded-[2.5rem] p-8 md:p-10 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.15)] text-white mb-8 overflow-hidden border border-slate-800">
+                    <div class="absolute top-8 right-8 text-white/10"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 21a3 3 0 100-6 3 3 0 000 6zM16 15a3 3 0 100-6 3 3 0 000 6z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9v6m8-6l-4 3m4 3l-4-3"></path></svg></div>
+                    <div class="absolute -top-12 -right-12 w-56 h-56 bg-fuchsia-500 opacity-30 rounded-full blur-[3.5rem] pointer-events-none"></div>
+                    <div class="relative z-10 mt-6">
+                        <span class="block text-slate-300 text-[11px] font-black mb-2 uppercase tracking-[0.3em]">Emine Toplam Kâr</span>
+                        <span id="other-total-profit" class="text-4xl md:text-6xl font-black truncate block tracking-tighter text-white transition-all drop-shadow-lg">0,00 ₺</span>
+                    </div>
+                </div>
+
+                <button onclick="openSmartAddModal()" class="w-full bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 hover:border-fuchsia-500 dark:hover:border-fuchsia-500 text-slate-800 dark:text-white font-black py-5 rounded-[2rem] shadow-sm transition-all text-xs uppercase tracking-widest mb-10 flex items-center justify-center gap-3 active:scale-95">
+                    <svg class="w-5 h-5 text-fuchsia-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                    Yeni Hisse Ekle
+                </button>
+
+                <h3 class="text-[11px] font-black text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-[0.2em] px-2">⏳ Devam Edenler</h3>
+                <div class="grid gap-6 mb-10" id="other-ongoing-container"></div>
+                <h3 class="text-[11px] font-black text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-[0.2em] px-2">🔒 Satılanlar</h3>
+                <div class="grid gap-6" id="other-completed-container"></div>
             </div>
         </div>
 
-        <div class="card">
-            <h2>📋 Son İşlemler (Silme Alanı)</h2>
-            <div id="islem-gecmisi"></div>
+        <div id="app-wrapper-stocks" class="hidden">
+            <div id="view-stocks-dashboard" class="app-view-stock fade-in">
+                <div class="relative bg-slate-900 dark:bg-carddark rounded-[2.5rem] p-8 md:p-10 shadow-2xl text-white mb-8 overflow-hidden border border-slate-800">
+                    <div class="absolute -top-10 -right-10 w-48 h-48 bg-emerald-500 opacity-30 rounded-full blur-[3.5rem] pointer-events-none"></div>
+                    <div class="relative z-10 mt-4">
+                        <span class="block text-slate-300 dark:text-slate-400 text-[11px] font-black mb-2 uppercase tracking-[0.3em]">Hisse Yatırımı</span>
+                        <span id="stocks-total-investment" class="text-4xl md:text-6xl font-black truncate block tracking-tighter text-white transition-all drop-shadow-lg">0,00 ₺</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/60 rounded-[2.5rem] p-7 shadow-sm mb-10">
+                    <h3 class="text-[11px] font-black text-slate-500 dark:text-slate-400 mb-5 uppercase tracking-[0.2em] flex items-center gap-2.5">
+                        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        Portföy Dağılımı
+                    </h3>
+                    <div class="relative h-64 w-full"><canvas id="portfolioChart"></canvas></div>
+                </div>
+
+                <h3 class="text-[11px] font-black text-slate-500 dark:text-slate-400 mb-5 uppercase tracking-[0.2em] px-2 flex items-center gap-2.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
+                    Büyüklük Sıralaması
+                </h3>
+                <div id="stocks-distribution" class="space-y-4"></div>
+            </div>
+
+            <div id="view-stocks-history" class="app-view-stock hidden fade-in">
+                <h2 class="text-[11px] font-black text-slate-500 dark:text-slate-400 mb-6 uppercase tracking-[0.2em] px-2">📜 Son İşlemler</h2>
+                <div id="stocks-history-container" class="space-y-4"></div>
+            </div>
+
+            <div id="view-stocks-monthly" class="app-view-stock hidden fade-in">
+                <h2 class="text-[11px] font-black text-slate-500 dark:text-slate-400 mb-6 uppercase tracking-[0.2em] px-2">📅 Aylık Maliyetler</h2>
+                <div id="stocks-monthly-container" class="space-y-8"></div>
+            </div>
+
+            <div id="view-stocks-general" class="app-view-stock hidden fade-in">
+                <h2 class="text-[11px] font-black text-slate-500 dark:text-slate-400 mb-6 uppercase tracking-[0.2em] px-2">🌍 Genel Durum</h2>
+                <div class="bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 rounded-[2.5rem] p-4 shadow-sm overflow-hidden">
+                    <div class="w-full overflow-x-auto no-scrollbar">
+                        <table class="w-full text-left" id="stocks-general-table">
+                            <thead><tr>
+                                <th class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/60">Hisse</th>
+                                <th class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/60">Adet</th>
+                                <th class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/60">Ort. Maliyet</th>
+                                <th class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/60">Yatırılan</th>
+                            </tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <nav id="nav-ipo" class="glass-nav border-t border-slate-200/50 dark:border-slate-800/50 h-[90px] flex justify-around items-center shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] absolute bottom-0 w-full z-40 pb-safe px-3 rounded-t-[2.5rem]">
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-btn-ipo flex-1 flex flex-col items-center justify-center text-indigo-600 dark:text-indigo-400 transition-all duration-200 pt-2 pb-4">
+            <svg class="w-6 h-6 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span class="text-[9px] font-black tracking-widest uppercase">ÖZET</span>
+        </button>
+        <button onclick="switchTab('ongoing')" id="tab-ongoing" class="nav-btn-ipo flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 pt-2 pb-4">
+            <svg class="w-6 h-6 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[9px] font-black tracking-widest uppercase">AKTİF</span>
+        </button>
+        
+        <div class="flex-1 flex justify-center pb-10 relative z-50">
+            <button onclick="openSmartAddModal()" class="absolute -top-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 w-[4.5rem] h-[4.5rem] rounded-[1.75rem] shadow-2xl rotate-45 active:scale-90 transition-all duration-300 flex items-center justify-center border-[5px] border-white dark:border-oled">
+                <svg class="w-8 h-8 -rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+        </div>
+
+        <button onclick="switchTab('completed')" id="tab-completed" class="nav-btn-ipo flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 pt-2 pb-4">
+            <svg class="w-6 h-6 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span class="text-[9px] font-black tracking-widest uppercase">SATILAN</span>
+        </button>
+        <button onclick="switchTab('other')" id="tab-other" class="nav-btn-ipo flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 pt-2 pb-4">
+            <svg class="w-6 h-6 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <span class="text-[9px] font-black tracking-widest uppercase">EMİNE</span>
+        </button>
+    </nav>
+
+    <nav id="nav-stocks" class="glass-nav border-t border-slate-200/50 dark:border-slate-800/50 h-[90px] flex justify-around items-center shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] absolute bottom-0 w-full z-40 pb-safe px-3 rounded-t-[2.5rem] hidden">
+        <button onclick="switchStockTab('dashboard')" id="tab-stocks-dashboard" class="nav-btn-stock flex-1 flex flex-col items-center justify-center text-emerald-600 dark:text-emerald-400 transition-all duration-200 pt-2 pb-4">
+            <svg class="w-6 h-6 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span class="text-[9px] font-black tracking-widest uppercase">ÖZET</span>
+        </button>
+        <button onclick="switchStockTab('history')" id="tab-stocks-history" class="nav-btn-stock flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 pt-2 pb-4">
+            <svg class="w-6 h-6 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+            <span class="text-[9px] font-black tracking-widest uppercase">GEÇMİŞ</span>
+        </button>
+        <div class="flex-1 flex justify-center pb-10 relative z-50">
+            <button onclick="openStockAddModal()" class="absolute -top-8 bg-emerald-500 text-white w-[4.5rem] h-[4.5rem] rounded-[1.75rem] shadow-2xl rotate-45 active:scale-90 transition-all border-[5px] duration-300 border-white dark:border-oled">
+                <svg class="w-8 h-8 -rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+        </div>
+        <button onclick="switchStockTab('monthly')" id="tab-stocks-monthly" class="nav-btn-stock flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 pt-2 pb-4">
+            <svg class="w-6 h-6 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="text-[9px] font-black tracking-widest uppercase">AYLIK</span>
+        </button>
+        <button onclick="switchStockTab('general')" id="tab-stocks-general" class="nav-btn-stock flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 pt-2 pb-4">
+            <svg class="w-6 h-6 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+            <span class="text-[9px] font-black tracking-widest uppercase">GENEL</span>
+        </button>
+    </nav>
+
+    <div id="details-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md hidden flex items-end justify-center z-50 transition-opacity">
+        <div class="bg-slate-50 dark:bg-oled rounded-t-[3rem] shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col transform transition-transform translate-y-full" id="details-modal-content">
+            <div class="p-7 pb-5 flex justify-between items-center relative bg-white dark:bg-carddark rounded-t-[3rem] border-b border-slate-200/60 dark:border-slate-800/80">
+                <div class="absolute top-4 left-1/2 transform -translate-x-1/2 w-14 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                <h3 id="modal-title" class="text-xl font-black text-slate-800 dark:text-white truncate mt-3 tracking-wide">Detay</h3>
+                <button onclick="closeModal('details-modal')" class="bg-slate-100 dark:bg-surface text-slate-500 dark:text-slate-400 rounded-full w-10 h-10 flex items-center justify-center font-bold mt-3 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">&times;</button>
+            </div>
+            <div id="modal-content-area" class="p-6 overflow-y-auto no-scrollbar flex-1 space-y-4"></div>
         </div>
     </div>
 
-    <!-- BÖLÜM 2: AYLIK ÖZETLER -->
-    <div id="tab-aylik" class="tab-content">
-        <div id="aylik-tablolar"></div>
-    </div>
-
-    <!-- BÖLÜM 3: GENEL PORTFÖY -->
-    <div id="tab-genel" class="tab-content">
-        <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
-            <div id="genel-tablo"></div>
+    <div id="add-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md hidden flex items-end justify-center z-50 transition-opacity">
+        <div class="bg-slate-50 dark:bg-oled rounded-t-[3rem] shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col transform transition-transform translate-y-full" id="add-modal-content">
+            <div class="p-7 pb-5 flex justify-between items-center relative bg-white dark:bg-carddark rounded-t-[3rem] border-b border-slate-200/60 dark:border-slate-800/80">
+                <div class="absolute top-4 left-1/2 transform -translate-x-1/2 w-14 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                <h3 id="add-modal-title" class="text-xl font-black text-slate-800 dark:text-white mt-3 tracking-wide">Yeni Ekle</h3>
+                <button onclick="closeModal('add-modal')" class="bg-slate-100 dark:bg-surface text-slate-500 dark:text-slate-400 rounded-full w-10 h-10 flex items-center justify-center font-bold mt-3 hover:bg-slate-200 transition-colors">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto no-scrollbar flex-1">
+                <input type="text" id="new-ipo-name" class="w-full mb-4 bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 focus:border-indigo-500 rounded-2xl p-4.5 shadow-sm outline-none uppercase font-black text-[13px] text-slate-800 dark:text-white transition-colors" placeholder="HİSSE ADI">
+                <input type="date" id="new-ipo-date" class="w-full mb-6 bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 focus:border-indigo-500 rounded-2xl p-4.5 shadow-sm outline-none text-sm font-bold text-slate-600 dark:text-slate-300 transition-colors">
+                
+                <div class="mb-4 flex justify-between items-end px-1">
+                    <label class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em]">Kişiler & Tutarlar</label>
+                    <button onclick="addIPORow('')" class="text-[10px] bg-slate-200 dark:bg-surface text-slate-700 dark:text-slate-300 py-2 px-4 rounded-xl font-black tracking-widest transition-colors active:scale-95">➕ EKLE</button>
+                </div>
+                <div id="participants-container" class="space-y-3.5 mb-8"></div>
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/50 p-5 rounded-[1.5rem] flex justify-between items-center shadow-inner">
+                    <span class="text-indigo-800/60 dark:text-indigo-400/80 font-black text-[10px] uppercase tracking-[0.25em]">TOPLAM</span>
+                    <span id="new-ipo-total" class="font-black text-2xl text-indigo-700 dark:text-indigo-400">0,00 ₺</span>
+                </div>
+            </div>
+            <div class="p-6 bg-white dark:bg-carddark pb-safe border-t border-slate-200/60 dark:border-slate-800/80">
+                <button onclick="saveNewIPO()" class="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-black dark:hover:bg-indigo-500 text-white font-black py-5 rounded-[1.5rem] active:scale-[0.98] text-[13px] uppercase tracking-[0.25em] transition-transform shadow-lg">KAYDET</button>
+            </div>
         </div>
     </div>
 
-</div>
-
-<!-- ALT MENÜ -->
-<div class="bottom-nav">
-    <div class="nav-item active" onclick="sekmeDegistir('tab-islem', this)">
-        <div class="nav-icon">➕</div>
-        İşlemler
+    <div id="add-stock-modal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md hidden flex items-end justify-center z-50 transition-opacity">
+        <div class="bg-slate-50 dark:bg-oled rounded-t-[3rem] shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col transform transition-transform translate-y-full" id="add-stock-modal-content">
+            <div class="p-7 pb-5 flex justify-between items-center relative bg-white dark:bg-carddark rounded-t-[3rem] border-b border-slate-200/60 dark:border-slate-800/80">
+                <div class="absolute top-4 left-1/2 transform -translate-x-1/2 w-14 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+                <h3 class="text-xl font-black text-slate-800 dark:text-white mt-3 tracking-wide">Borsa İşlemi</h3>
+                <button onclick="closeModal('add-stock-modal')" class="bg-slate-100 dark:bg-surface text-slate-500 dark:text-slate-400 rounded-full w-10 h-10 flex items-center justify-center font-bold mt-3 hover:bg-slate-200 transition-colors">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto no-scrollbar flex-1 space-y-5">
+                <input type="date" id="stock-date" class="w-full bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 focus:border-emerald-500 rounded-2xl p-4.5 shadow-sm outline-none text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors">
+                <input type="text" id="stock-ticker" class="w-full bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 focus:border-emerald-500 rounded-2xl p-4.5 shadow-sm outline-none uppercase font-black text-[13px] text-slate-800 dark:text-white transition-all" placeholder="KOD (ÖRN: THYAO)">
+                <div class="flex gap-4">
+                    <input type="number" inputmode="numeric" id="stock-qty" class="w-full flex-1 bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 focus:border-emerald-500 rounded-2xl p-4.5 shadow-sm outline-none font-black text-emerald-600 dark:text-emerald-400 text-base transition-all" placeholder="Adet">
+                    <input type="number" inputmode="decimal" step="any" id="stock-price" class="w-full flex-1 bg-white dark:bg-carddark border border-slate-200/60 dark:border-slate-800/80 focus:border-emerald-500 rounded-2xl p-4.5 shadow-sm outline-none font-black text-emerald-600 dark:text-emerald-400 text-base transition-all" placeholder="Fiyat (₺)">
+                </div>
+            </div>
+            <div class="p-6 bg-white dark:bg-carddark pb-safe border-t border-slate-200/60 dark:border-slate-800/80">
+                <button onclick="saveStockTransaction()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-5 rounded-[1.5rem] active:scale-[0.98] text-[13px] uppercase tracking-[0.25em] transition-transform shadow-lg">KAYDET</button>
+            </div>
+        </div>
     </div>
-    <div class="nav-item" onclick="sekmeDegistir('tab-aylik', this)">
-        <div class="nav-icon">📅</div>
-        Aylık
-    </div>
-    <div class="nav-item" onclick="sekmeDegistir('tab-genel', this)">
-        <div class="nav-icon">🌍</div>
-        Portföy
-    </div>
-</div>
 
-<script>
-    // ==========================================
-    // YENİ EKLENEN ÖZELLİKLER (Halka Arz ve Tarih)
-    // ==========================================
-    
-    // 1. Halka Arz Fiyatları Sözlüğü
-    const halkaArzFiyatlari = {
-        "ARFYE": 19.50,
-        "MEYSU": 7.50,
-        "ZGYO": 9.77,
-        "FRMPL": 30.24,
-        "UCAYM": 18.00,
-        "NETCD": 46.00,
-        "AKHAN": 21.50,
-        "BESTE": 14.70,
-        "ATATR": 11.20,
-        "EMPAE": 22.00,
-        "SVGYO": 3.64,
-        "GENKM": 11.00,
-        "LXGYO": 12.05,
-        "MCARD": 80.00,
-        "AAGYO": 21.10
-    };
+    <script>
+        // KAYDIRMA ASİSTANI JAVASCRIPT (YUMUŞAK YARIM EKRAN KAYDIRMA)
+        const mainScroll = document.getElementById('main-scroll');
+        const scrollAssistant = document.getElementById('scroll-assistant');
+        let scrollTimeout;
 
-    // 2. Sayfa yüklendiğinde çalışacak başlangıç ayarları
-    document.addEventListener("DOMContentLoaded", function() {
-        // Tarih kutusunu bugünün tarihi ile doldur
-        document.getElementById("tarih").valueAsDate = new Date();
+        const scrollStep = (direction) => {
+            const stepAmount = mainScroll.clientHeight * 0.6; // Ekranın %60'ı kadar atlar
+            mainScroll.scrollBy({ top: stepAmount * direction, behavior: 'smooth' });
+        };
 
-        // Hisse kutusunu dinle ve fiyatı otomatik doldur
-        document.getElementById("hisse").addEventListener("input", function() {
-            let girilenHisse = this.value.trim().toUpperCase();
+        mainScroll.addEventListener('scroll', () => {
+            scrollAssistant.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+            scrollAssistant.classList.add('opacity-100', 'translate-y-0');
             
-            // Eğer yazılan hisse listemizde varsa, fiyatı yazdır
-            if (halkaArzFiyatlari[girilenHisse] !== undefined) {
-                document.getElementById("fiyat").value = halkaArzFiyatlari[girilenHisse];
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                scrollAssistant.classList.remove('opacity-100', 'translate-y-0');
+                scrollAssistant.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+            }, 1500); // 1.5 saniye sonra zarifçe kaybolur
+        });
+
+        // YEDEKLEME FONKSİYONU
+        const exportData = () => {
+            const data = { halkaArzData: dbIPO, emineData: dbOther, borsaData: dbStocks, yedekTarihi: new Date().toISOString() };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            const dlAnchorElem = document.createElement('a'); dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", "finans_merkezi_yedek.json"); dlAnchorElem.click();
+        };
+
+        // DARK MODE
+        const toggleDarkMode = () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateChartThemes(); 
+        };
+
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else { document.documentElement.classList.remove('dark'); }
+
+        const formatTL = (num) => new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num) + ' ₺';
+        const formatDate = (dateString) => {
+            if (!dateString) return "-";
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('tr-TR', options);
+        };
+        const monthNames = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+
+        let currentAppMode = 'ipo';
+        const switchAppMode = (mode) => {
+            currentAppMode = mode;
+            const btnIpo = document.getElementById('mode-ipo'); const btnStock = document.getElementById('mode-stocks');
+            if(mode === 'ipo') {
+                document.getElementById('app-wrapper-ipo').classList.remove('hidden'); document.getElementById('nav-ipo').classList.remove('hidden');
+                document.getElementById('app-wrapper-stocks').classList.add('hidden'); document.getElementById('nav-stocks').classList.add('hidden');
+                btnIpo.className = 'flex-1 py-3.5 text-[11px] font-black tracking-[0.15em] rounded-xl bg-white dark:bg-carddark text-indigo-600 dark:text-indigo-400 shadow-sm transition-all duration-300 flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-700/50';
+                btnStock.className = 'flex-1 py-3.5 text-[11px] font-black tracking-[0.15em] rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all duration-300 flex items-center justify-center gap-2 border border-transparent';
+                renderIPO_UI();
+            } else {
+                document.getElementById('app-wrapper-ipo').classList.add('hidden'); document.getElementById('nav-ipo').classList.add('hidden');
+                document.getElementById('app-wrapper-stocks').classList.remove('hidden'); document.getElementById('nav-stocks').classList.remove('hidden');
+                btnStock.className = 'flex-1 py-3.5 text-[11px] font-black tracking-[0.15em] rounded-xl bg-white dark:bg-carddark text-emerald-600 dark:text-emerald-400 shadow-sm transition-all duration-300 flex items-center justify-center gap-2 border border-slate-100 dark:border-slate-800/50';
+                btnIpo.className = 'flex-1 py-3.5 text-[11px] font-black tracking-[0.15em] rounded-xl text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all duration-300 flex items-center justify-center gap-2 border border-transparent';
+                renderStocksUI();
             }
-        });
-    });
+        };
 
-    // ==========================================
-    // ORİJİNAL KODLARINIZ BURADAN İTİBAREN BAŞLAR
-    // ==========================================
-
-    // Önceki veriler (18 Mart Dahil)
-    const varsayilanIslemler = [
-        { tarih: "2026-02-09", hisse: "UCAY", adet: 5, fiyat: 36.32 },
-        { tarih: "2026-02-09", hisse: "FORMT", adet: 5, fiyat: 39.18 },
-        { tarih: "2026-02-09", hisse: "MEYSU", adet: 5, fiyat: 15.84 },
-        { tarih: "2026-02-09", hisse: "ARFBE", adet: 5, fiyat: 29.98 },
-        { tarih: "2026-02-09", hisse: "THYAO", adet: 2, fiyat: 326.50 },
-        { tarih: "2026-02-09", hisse: "TUPRS", adet: 1, fiyat: 222.70 },
-        { tarih: "2026-02-09", hisse: "GRSEL", adet: 1, fiyat: 352.25 },
-        { tarih: "2026-02-09", hisse: "ASTOR", adet: 1, fiyat: 154.30 },
-        { tarih: "2026-02-09", hisse: "ENKAI", adet: 1, fiyat: 96.90 },
-        { tarih: "2026-02-09", hisse: "TABGD", adet: 1, fiyat: 257.00 },
-        { tarih: "2026-02-09", hisse: "PGSUS", adet: 1, fiyat: 209.30 },
-        { tarih: "2026-02-09", hisse: "AKSEN", adet: 1, fiyat: 69.25 },
-        { tarih: "2026-02-09", hisse: "GARAN", adet: 1, fiyat: 157.30 },
-        { tarih: "2026-02-09", hisse: "TCELL", adet: 1, fiyat: 115.90 },
-        { tarih: "2026-02-09", hisse: "OYAKC", adet: 1, fiyat: 26.14 },
-        { tarih: "2026-02-09", hisse: "ALTNY", adet: 1, fiyat: 15.73 },
-        { tarih: "2026-02-09", hisse: "AKSEN", adet: 2, fiyat: 69.10 },
-        { tarih: "2026-02-09", hisse: "OYAKC", adet: 2, fiyat: 26.12 },
-        { tarih: "2026-02-09", hisse: "ALTNY", adet: 1, fiyat: 15.71 },
-        { tarih: "2026-03-11", hisse: "GRSEL", adet: 2, fiyat: 329.00 },
-        { tarih: "2026-03-11", hisse: "TUPRS", adet: 3, fiyat: 253.25 },
-        { tarih: "2026-03-11", hisse: "ASTOR", adet: 3, fiyat: 191.50 },
-        { tarih: "2026-03-11", hisse: "AKSEN", adet: 5, fiyat: 72.60 },
-        { tarih: "2026-03-11", hisse: "ENKAI", adet: 5, fiyat: 91.30 },
-        { tarih: "2026-03-11", hisse: "TCELL", adet: 3, fiyat: 110.00 },
-        { tarih: "2026-03-18", hisse: "AKSA", adet: 84, fiyat: 11.21 },
-        { tarih: "2026-03-18", hisse: "GRSEL", adet: 1, fiyat: 324.25 },
-        { tarih: "2026-03-18", hisse: "ASELS", adet: 3, fiyat: 354.75 },
-        { tarih: "2026-03-18", hisse: "PGSUS", adet: 6, fiyat: 179.70 },
-        { tarih: "2026-03-18", hisse: "AKSEN", adet: 5, fiyat: 79.70 },
-        { tarih: "2026-03-18", hisse: "AKSA", adet: 9, fiyat: 11.19 }
-    ];
-
-    let islemler = JSON.parse(localStorage.getItem("portfoyVerisi_v3"));
-    if (!islemler || islemler.length === 0) {
-        islemler = varsayilanIslemler;
-        veriyiKaydet();
-    }
-
-    const aylarIsim = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-
-    // SEKME DEĞİŞTİRME FONKSİYONU
-    function sekmeDegistir(tabId, element) {
-        // Tüm sekmeleri gizle
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        // Tüm menü ikonlarının rengini sıfırla
-        document.querySelectorAll('.nav-item').forEach(nav => {
-            nav.classList.remove('active');
-        });
-
-        // Seçilen sekmeyi ve menüyü aktif yap
-        document.getElementById(tabId).classList.add('active');
-        element.classList.add('active');
-        
-        // Tabloları güncelleyerek çiz
-        tablolariCiz();
-    }
-
-    function formatTL(sayi) {
-        return sayi.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
-    }
-
-    function veriyiKaydet() {
-        localStorage.setItem("portfoyVerisi_v3", JSON.stringify(islemler));
-    }
-
-    function veriEkle() {
-        let tarih = document.getElementById("tarih").value;
-        let hisse = document.getElementById("hisse").value.trim().toUpperCase();
-        let adet = parseInt(document.getElementById("adet").value);
-        let fiyat = parseFloat(document.getElementById("fiyat").value);
-
-        if(!tarih || !hisse || isNaN(adet) || isNaN(fiyat)) {
-            alert("⚠️ Lütfen tüm alanları doldurun!");
-            return;
-        }
-
-        islemler.push({ tarih: tarih, hisse: hisse, adet: adet, fiyat: fiyat });
-        veriyiKaydet();
-        
-        document.getElementById("hisse").value = "";
-        document.getElementById("adet").value = "";
-        // Fiyatı da temizleyelim ama tarihi temizlemiyoruz ki bugünde kalsın
-        document.getElementById("fiyat").value = ""; 
-        
-        tablolariCiz();
-        alert("✅ İşlem başarıyla eklendi!");
-    }
-
-    function veriSil(index) {
-        if(confirm("Silmek istediğinize emin misiniz?")) {
-            islemler.splice(index, 1);
-            veriyiKaydet();
-            tablolariCiz();
-        }
-    }
-
-    function tablolariCiz() {
-        islemGecmisiniCiz();
-
-        let aylikVeriler = {};
-        let genelVeriler = {};
-        let genelToplamYatirim = 0;
-
-        islemler.forEach(islem => {
-            let tutar = islem.adet * islem.fiyat;
-            let tarihParcalari = islem.tarih.split("-");
-            let yil = tarihParcalari[0];
-            let ay = parseInt(tarihParcalari[1], 10);
-            let ayAnahtar = `${yil}-${ay.toString().padStart(2, '0')}`; 
-
-            if (!aylikVeriler[ayAnahtar]) aylikVeriler[ayAnahtar] = { yil: yil, ay: ay, hisseler: {} };
-            if (!aylikVeriler[ayAnahtar].hisseler[islem.hisse]) aylikVeriler[ayAnahtar].hisseler[islem.hisse] = { adet: 0, tutar: 0 };
-            
-            aylikVeriler[ayAnahtar].hisseler[islem.hisse].adet += islem.adet;
-            aylikVeriler[ayAnahtar].hisseler[islem.hisse].tutar += tutar;
-
-            if (!genelVeriler[islem.hisse]) genelVeriler[islem.hisse] = { adet: 0, tutar: 0 };
-            genelVeriler[islem.hisse].adet += islem.adet;
-            genelVeriler[islem.hisse].tutar += tutar;
-            genelToplamYatirim += tutar;
-        });
-
-        // AYLIK TABLOLAR
-        let aylikHtml = "";
-        let siraliAylar = Object.keys(aylikVeriler).sort().reverse(); // En yeni ay en üstte olsun
-
-        siraliAylar.forEach(anahtar => {
-            let ayData = aylikVeriler[anahtar];
-            aylikHtml += `<div class="card"><h2>📅 ${aylarIsim[ayData.ay]} ${ayData.yil} ÖZETİ</h2>`;
-            aylikHtml += `<div class="table-responsive"><table><tr><th>Hisse</th><th>Adet</th><th>Ort. Maliyet</th><th>Toplam</th></tr>`;
-            
-            let hisseListesi = Object.entries(ayData.hisseler).sort((a, b) => b[1].tutar - a[1].tutar);
-            let aylikToplamYatirim = 0;
-            
-            hisseListesi.forEach(([hisseKod, veri]) => {
-                let ort = veri.tutar / veri.adet;
-                aylikToplamYatirim += veri.tutar;
-                aylikHtml += `<tr>
-                    <td><strong>${hisseKod}</strong></td>
-                    <td>${veri.adet}</td>
-                    <td>${formatTL(ort)}</td>
-                    <td>${formatTL(veri.tutar)}</td>
-                </tr>`;
+        let sortPrefOngoing = 'dateDesc'; let sortPrefCompleted = 'dateDesc';
+        const changeSort = (tab, value) => { if(tab === 'ongoing') sortPrefOngoing = value; if(tab === 'completed') sortPrefCompleted = value; renderIPO_UI(); };
+        const sortData = (dataArray, sortType) => {
+            return dataArray.sort((a, b) => {
+                if(sortType === 'dateDesc') return new Date(b.date || 0) - new Date(a.date || 0);
+                if(sortType === 'profitDesc') return b.profit - a.profit;
+                if(sortType === 'profitAsc') return a.profit - b.profit;
+                return 0;
             });
-            aylikHtml += `<tr><td colspan="4" class="aylik-toplam">Aylık Toplam: ${formatTL(aylikToplamYatirim)}</td></tr>`;
-            aylikHtml += `</table></div></div>`;
-        });
-        document.getElementById("aylik-tablolar").innerHTML = aylikHtml;
+        };
 
-        // GENEL TABLO
-        let genelHtml = `<div class="card"><h2>🌍 GENEL PORTFÖY</h2>`;
-        if (Object.keys(genelVeriler).length === 0) {
-            genelHtml += `<p>Kayıtlı işlem yok.</p></div>`;
-        } else {
-            genelHtml += `<div class="table-responsive"><table><tr><th>Hisse</th><th>Toplam Adet</th><th>Genel Ort.</th><th>Yatırılan Para</th></tr>`;
-            let genelHisseListesi = Object.entries(genelVeriler).sort((a, b) => b[1].tutar - a[1].tutar);
-            
-            genelHisseListesi.forEach(([hisseKod, veri]) => {
-                let ort = veri.tutar / veri.adet;
-                genelHtml += `<tr>
-                    <td><strong>${hisseKod}</strong></td>
-                    <td>${veri.adet}</td>
-                    <td>${formatTL(ort)}</td>
-                    <td>${formatTL(veri.tutar)}</td>
-                </tr>`;
+        const openModal = (id) => { const modal = document.getElementById(id); const content = document.getElementById(`${id}-content`); modal.classList.remove("hidden"); setTimeout(() => { content.classList.remove("translate-y-full"); }, 10); };
+        const closeModal = (id) => { const modal = document.getElementById(id); const content = document.getElementById(`${id}-content`); content.classList.add("translate-y-full"); setTimeout(() => { modal.classList.add("hidden"); }, 300); };
+
+        const parseData = (arr) => {
+            return arr.map(item => {
+                const perc = item.invested > 0 ? (item.profit / item.invested) * 100 : 0;
+                return {
+                    id: item.id, name: item.name, date: item.date, status: item.status,
+                    invested: item.invested, percentage: perc, profit: item.profit, total: item.invested + item.profit,
+                    participants: item.parts.map((p, i) => { const isSold = item.status === 'completed'; const pProfit = isSold ? (p[1] * (perc / 100)) : 0; return { id: 'p_' + item.id + '_' + i, name: p[0], initialAmount: p[1], isSold: isSold, soldProfit: pProfit, soldTotal: p[1] + pProfit }; })
+                };
             });
-            genelHtml += `</table></div><div class="genel-toplam">TÜM YATIRIM: ${formatTL(genelToplamYatirim)}</div></div>`;
-        }
-        document.getElementById("genel-tablo").innerHTML = genelHtml;
-    }
+        };
 
-    function islemGecmisiniCiz() {
-        if (islemler.length === 0) {
-            document.getElementById("islem-gecmisi").innerHTML = "<p>İşlem bulunmuyor.</p>";
-            return;
-        }
+        // --- VERİLER (Eksiksiz 14 + 7 + 31) ---
+        const rawMainData = [
+            { id: "arfye", name: "ARF BİO (ARFYE)", date: "2026-01-05", status: "completed", invested: 5362.5, profit: 4114.11, parts: [["Yunus Emre Demir - Ziraat", 916.5], ["Ali Demir - Oyak yatırım", 916.5], ["Halil Demir - Oyak yatırım", 916.5], ["Yusuf Demir - Garanti", 916.5], ["Gülseren Hançar - Garanti", 916.5], ["Hüseyin Demir - Garanti", 780]] },
+            { id: "meysu", name: "MEYSU GIDA (MEYSU)", date: "2026-01-16", status: "completed", invested: 8707.5, profit: 4220.04, parts: [["Sait Demir - Burgan Yatırım", 967.5], ["Yunus Emre Demir - Ziraat", 967.5], ["Gülseren Hançar - Garanti", 967.5], ["Yusuf Demir - Garanti", 967.5], ["Nurhan Demir - Akbank", 967.5], ["Halil Demir - OYAK YATIRIM", 967.5], ["Ali Demir - OYAK YATIRIM", 967.5], ["Hüseyin Demir - Garanti", 967.5], ["Hilal Ertürk - Ziraat Bankası", 967.5]] },
+            { id: "frmpl", name: "FORMÜL PLASTİK (FRMPL)", date: "2026-01-15", status: "completed", invested: 9676.8, profit: 7347.59, parts: [["Sait Demir - Burgan Yatırım", 1209.6], ["Yunus Emre Demir - Ziraat", 1209.6], ["Gülseren Hançar - Garanti", 1209.6], ["Yusuf Demir - Garanti", 1209.6], ["Nurhan Demir - Akbank", 1209.6], ["Halil Demir - OYAK YATIRIM", 1209.6], ["Ali Demir - OYAK YATIRIM", 1209.6], ["Hüseyin Demir - Garanti", 1209.6]] },
+            { id: "akhan", name: "AKHAN (AKHAN)", date: "2026-02-06", status: "completed", invested: 7525, profit: 3485.33, parts: [["Sait Demir - Burgan Yatırım", 752.5], ["Yunus Emre Demir - Ziraat", 752.5], ["Gülseren Hançar - Garanti", 752.5], ["Nurhan Demir - Akbank", 752.5], ["Halil Demir - OYAK YATIRIM", 752.5], ["Ali Demir - OYAK YATIRIM", 752.5], ["Hüseyin Demir - Garanti", 752.5], ["Hilal Ertürk - Ziraat Bankası", 752.5], ["Sevda Demir - Akbank", 752.5], ["Yusuf Demir - Garanti", 752.5]] },
+            { id: "netcd", name: "NETCAD YAZILIM (NETCD)", date: "2026-02-05", status: "completed", invested: 11500, profit: 14380, parts: [["Sait Demir - Burgan Yatırım", 1150], ["Yunus Emre Demir - Ziraat", 1150], ["Gülseren Hançar - Garanti", 1150], ["Nurhan Demir - Akbank", 1150], ["Halil Demir - OYAK YATIRIM", 1150], ["Ali Demir - OYAK YATIRIM", 1150], ["Hüseyin Demir - Garanti", 1150], ["Hilal Ertürk - Ziraat Bankası", 1150], ["Sevda Demir - Akbank", 1150], ["Yusuf Demir - Garanti", 1150]] },
+            { id: "beste", name: "BEST BRANDS (BESTE)", date: "2026-02-11", status: "completed", invested: 10437, profit: 15405.62, parts: [["Sait Demir - BURGAN", 1043.7], ["Yunus Emre Demir - ZİRAAT", 1043.7], ["Hilal Ertürk - ZİRAAT", 1043.7], ["Halil Demir - OYAK", 1043.7], ["Ali Demir - OYAK", 1043.7], ["Yusuf Demir - GARANTİ", 1043.7], ["Hüseyin Demir - GARANTİ", 1043.7], ["Gülseren Hançar - GARANTİ", 1043.7], ["Nurhan Demir - AKBANK", 1043.7], ["Sevda Demir - AKBANK", 1043.7]] },
+            { id: "atatr", name: "ATA TURİZM (ATATR)", date: "2026-02-19", status: "completed", invested: 21168, profit: 6756.42, parts: [["Sait Demir - Burgan Yatırım", 4233.6], ["Yunus Emre Demir - Ziraat", 4233.6], ["Halil Demir - OYAK YATIRIM", 4233.6], ["Ali Demir - OYAK YATIRIM", 4233.6], ["Hilal Ertürk - Ziraat Bankası", 4233.6]] },
+            { id: "ucaym", name: "ÜÇAY MÜHENDİSLİK (UCAYM)", date: "2026-01-22", status: "completed", invested: 9000, profit: 10060.20, parts: [["Sait Demir - Burgan Yatırım", 1008], ["Yunus Emre Demir - Ziraat", 972], ["Gülseren Hançar - Garanti", 1008], ["Nurhan Demir - Akbank", 1008], ["Halil Demir - OYAK YATIRIM", 1008], ["Ali Demir - OYAK YATIRIM", 1008], ["Hüseyin Demir - Garanti", 1008], ["Hilal Ertürk - Ziraat Bankası", 972], ["Sevda Demir - Akbank", 1008]] },
+            { id: "svgyo", name: "SAVUR GYO (SVGYO)", date: "2026-03-06", status: "completed", invested: 3185, profit: 1406.18, parts: [["Sait Demir - Burgan Yatırım", 637], ["Yunus Emre Demir - Ziraat", 637], ["Halil Demir - OYAK YATIRIM", 637], ["Ali Demir - OYAK YATIRIM", 637], ["Hilal Ertürk - ZİRAAT", 637]] },
+            { id: "genkm", name: "GENTAŞ (GENKM)", date: "2026-03-06", status: "completed", invested: 17622, profit: 4300, parts: [["Sait Demir - Burgan Yatırım", 1958], ["Yunus Emre Demir - Ziraat", 1958], ["Gülseren Hançar - Garanti", 1958], ["Halil Demir - OYAK YATIRIM", 1958], ["Ali Demir - OYAK YATIRIM", 1958], ["Hüseyin Demir - Garanti", 1958], ["Yusuf Demir - Garanti", 1958], ["Sevda Demir - BTC Türk", 1958], ["Nuran Demir - Akbank", 1958]] },
+            { id: "mcrd", name: "METROPOL (MCARD)", date: "2026-03-11", status: "completed", invested: 7200, profit: 6039, parts: [["Sait Demir - BURGAN", 800], ["Yunus Emre Demir - ZİRAAT", 800], ["Hilal Ertürk - ZİRAAT", 800], ["Halil Demir - OYAK", 800], ["Ali Demir - OYAK", 800], ["Yusuf Demir - GARANTİ", 800], ["Hüseyin Demir - GARANTİ", 800], ["Gülseren Hançar - GARANTİ", 800], ["Sevda Demir - BTC Türk", 800]] },
+            { id: "zgyo", name: "Z GYO (ZGYO)", date: "2026-01-16", status: "completed", invested: 5060.08, profit: 7068.60, parts: [["Yunus Emre Demir - Ziraat", 1074.70], ["Halil Demir - OYAK YATIRIM", 996.54], ["Ali Demir - OYAK YATIRIM", 996.54], ["Yusuf Demir - Garanti", 996.54], ["Hüseyin Demir - Garanti", 996.54]] },
+            { id: "empae", name: "EMPA ELEKTRONİK (EMPAE)", date: "2026-02-26", status: "completed", invested: 3080, profit: 2374.37, parts: [["Sait Demir - Burgan Yatırım", 440], ["Yunus Emre Demir - Ziraat", 440], ["Gülseren Hançar - Garanti", 440], ["Halil Demir - OYAK YATIRIM", 440], ["Ali Demir - OYAK YATIRIM", 440], ["Hüseyin Demir - Garanti", 440], ["Yusuf Demir - Garanti", 440]] },
+            { id: "lxgyo", name: "LUXERA GYO", date: "2026-03-10", status: "ongoing", invested: 5398.4, profit: 1128.78, parts: [["Sait Demir - Burgan Yatırım", 674.8], ["Yunus Emre Demir - Ziraat", 674.8], ["Gülseren Hançar - Garanti", 674.8], ["Halil Demir - OYAK YATIRIM", 674.8], ["Ali Demir - OYAK YATIRIM", 674.8], ["Hüseyin Demir - Garanti", 674.8], ["Yusuf Demir - Garanti", 674.8], ["Sevda Demir - BTC Türk", 674.8]] }
+        ];
 
-        let html = `<div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;"><div class="table-responsive" style="margin:0; border:none;"><table><tr><th>Tarih</th><th>Hisse</th><th>Adet</th><th>Fiyat</th><th>İşlem</th></tr>`;
-        
-        let kopyasi = islemler.map((islem, index) => ({...islem, gercekIndex: index})).reverse();
+        const rawOtherData = [
+            { id: "e_netcd", name: "NETCAD YAZILIM", date: "2026-02-05", status: "completed", invested: 1150, profit: 1452.02, parts: [["Emine - Kendi Hesabı", 1150]] },
+            { id: "e_akhan", name: "AKHAN", date: "2026-02-06", status: "completed", invested: 752.5, profit: 418.21, parts: [["Emine - Kendi Hesabı", 752.5]] },
+            { id: "e_beste", name: "BEST BRANDS", date: "2026-02-11", status: "completed", invested: 1043.7, profit: 1569.92, parts: [["Emine - Kendi Hesabı", 1043.7]] },
+            { id: "e_atatr", name: "ATA TURİZM", date: "2026-02-19", status: "completed", invested: 6113.40, profit: -1235.33, parts: [["Emine - Kendi Hesabı", 6113.40]] },
+            { id: "e_genkm", name: "GENTAŞ", date: "2026-03-06", status: "completed", invested: 1958, profit: 434.06, parts: [["Emine - Kendi Hesabı", 1958]] },
+            { id: "e_lxgyo", name: "LUXERA GYO", date: "2026-03-10", status: "ongoing", invested: 675, profit: 738.64, parts: [["Emine - Kendi Hesabı", 675]] },
+            { id: "e_mcrd", name: "METROPOL", date: "2026-03-11", status: "ongoing", invested: 800, profit: 680, parts: [["Emine - Kendi Hesabı", 800]] }
+        ];
 
-        kopyasi.forEach(islem => {
-            let parcalar = islem.tarih.split("-");
-            let trTarih = `${parcalar[2]}.${parcalar[1]}`;
+        let dbIPO = JSON.parse(localStorage.getItem('halkaArzDB_v29_main'));
+        if (!dbIPO || dbIPO.length === 0) { dbIPO = parseData(rawMainData); localStorage.setItem('halkaArzDB_v29_main', JSON.stringify(dbIPO)); }
+        let dbOther = JSON.parse(localStorage.getItem('halkaArzDB_v29_other'));
+        if (!dbOther || dbOther.length === 0) { dbOther = parseData(rawOtherData); localStorage.setItem('halkaArzDB_v29_other', JSON.stringify(dbOther)); }
+
+        let currentIPOTab = 'dashboard';
+        let currentAddTarget = 'main';
+        const saveIPODB = () => { localStorage.setItem('halkaArzDB_v29_main', JSON.stringify(dbIPO)); localStorage.setItem('halkaArzDB_v29_other', JSON.stringify(dbOther)); };
+
+        let ipoProfitChart = null;
+        const renderIPOHistoricalChart = () => {
+            const ctx = document.getElementById('ipoProfitChart'); if(!ctx) return;
+            const isDark = document.documentElement.classList.contains('dark');
+            const data = [...dbIPO].sort((a,b) => new Date(a.date) - new Date(b.date));
+            const labels = data.map(item => { let s = item.name.split(' (')[0]; if(s === 'Z GYO' || s === 'Z') return 'Z GAYRİMENKUL'; return s; });
+            const profitData = data.map(item => item.profit);
+            const investData = data.map(item => item.invested);
+
+            if(ipoProfitChart) ipoProfitChart.destroy();
+            ipoProfitChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Kâr / Zarar', data: profitData, backgroundColor: profitData.map(v => v>=0 ? (isDark?'#34d399':'#10b981') : (isDark?'#fb7185':'#ef4444')), borderRadius: 6, order: 1 },
+                        { label: 'Ana Para', data: investData, type: 'line', borderColor: isDark?'#818cf8':'#4f46e5', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 3, order: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: isDark ? '#94a3b8' : '#64748b', font: { family: 'Inter', size: 10, weight: 'bold' } } } },
+                    scales: {
+                        y: { grid: { color: isDark ? '#1e1e24' : '#f1f5f9' }, ticks: { color: isDark ? '#64748b' : '#94a3b8', font: { size: 10, weight: 'bold' }, callback: (v) => formatTL(v) } },
+                        x: { grid: { display: false }, ticks: { color: isDark ? '#64748b' : '#94a3b8', font: { size: 9, weight: 'bold' }, maxRotation: 45, minRotation: 45 } }
+                    }
+                }
+            });
+        };
+
+        const updateChartThemes = () => {
+            if (currentAppMode === 'ipo' && document.getElementById('view-dashboard').classList.contains('hidden') === false) { renderIPOHistoricalChart(); }
+            if (currentAppMode === 'stocks' && document.getElementById('view-stocks-dashboard').classList.contains('hidden') === false) { renderStockPortfolioChart(); }
+        };
+
+        const updateIPODashboard = () => {
+            let tP = 0, onC = 0, comC = 0, oTP = 0;
+            dbIPO.forEach(i => { tP += i.profit; if(i.status === 'ongoing') onC++; else comC++; });
+            dbOther.forEach(i => oTP += i.profit);
+
+            document.getElementById("grand-total-profit").innerText = `${tP >= 0 ? '+' : ''}${formatTL(tP)}`;
+            document.getElementById("other-total-profit").innerText = `${oTP >= 0 ? '+' : ''}${formatTL(oTP)}`;
+            document.getElementById("stat-ongoing").innerText = onC;
+            document.getElementById("stat-completed").innerText = comC;
+
+            renderIPOHistoricalChart();
+
+            const top = [...dbIPO].filter(i => i.profit > 0).sort((a, b) => b.profit - a.profit).slice(0, 5);
+            let topHTML = '';
+            top.forEach((ipo, idx) => {
+                let rankColor = idx === 0 ? 'text-amber-500' : idx === 1 ? 'text-slate-400' : idx === 2 ? 'text-orange-500' : 'text-slate-300 dark:text-slate-600';
+                let displayName = ipo.name.split(' (')[0];
+                if(displayName === 'Z GYO' || displayName === 'Z') displayName = 'Z GAYRİMENKUL';
+
+                topHTML += `
+                    <div class="bg-white dark:bg-carddark rounded-[1.25rem] p-5 border border-slate-200/60 dark:border-slate-800/60 flex justify-between items-center shadow-sm hover:border-indigo-500 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <span class="font-extrabold text-xl ${rankColor} w-6 text-center">${idx + 1}</span>
+                            <div>
+                                <h4 class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">${displayName}</h4>
+                                <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">${ipo.status === 'completed' ? 'Satıldı' : 'Aktif'}</span>
+                            </div>
+                        </div>
+                        <span class="font-black text-indigo-600 dark:text-indigo-400 text-[15px] tracking-tight">+${formatTL(ipo.profit)}</span>
+                    </div>`;
+            });
+            document.getElementById("top-earners-container").innerHTML = topHTML || '<div class="text-center p-6 text-slate-400 text-xs font-bold uppercase tracking-widest bg-white rounded-2xl border border-slate-200">Kâr yok.</div>';
+        };
+
+        const switchTab = (tabId) => {
+            currentIPOTab = tabId;
+            document.querySelectorAll('#app-wrapper-ipo .app-view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn-ipo').forEach(btn => btn.className = 'nav-btn-ipo flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 pt-2 pb-4');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if(activeBtn) { activeBtn.className = `nav-btn-ipo flex-1 flex flex-col items-center justify-center pt-2 pb-4 transition-all duration-200 ${tabId === 'other' ? 'text-fuchsia-600 dark:text-fuchsia-400' : 'text-indigo-600 dark:text-indigo-400'}`; }
+            document.getElementById('main-scroll').scrollTo({ top: 0, behavior: 'smooth' });
+            if(tabId === 'dashboard') renderIPOHistoricalChart();
+        };
+
+        // YENİ PROGRESS BAR'LI KART ÜRETİCİSİ
+        const genIPOCard = (ipo, isOther) => {
+            const isLoss = ipo.profit < 0; const pC = isLoss ? 'text-rose-500' : 'text-emerald-500'; const sign = isLoss ? '' : '+';
+            const colorClass = isOther ? 'fuchsia' : 'indigo'; const borderLine = isOther ? 'bg-fuchsia-500' : 'bg-indigo-500';
             
-            html += `<tr>
-                <td>${trTarih}</td>
-                <td><strong>${islem.hisse}</strong></td>
-                <td>${islem.adet}</td>
-                <td>${formatTL(islem.fiyat)}</td>
-                <td><button class="sil-btn" onclick="veriSil(${islem.gercekIndex})">Sil</button></td>
-            </tr>`;
-        });
-        html += `</table></div></div>`;
+            let dispName = ipo.name.split(' (')[0];
+            if(dispName === 'Z GYO' || dispName === 'Z') dispName = 'Z GAYRİMENKUL';
+
+            const roiPercent = ipo.invested > 0 ? (ipo.profit / ipo.invested) * 100 : 0;
+            const progressColor = isLoss ? 'bg-rose-500' : 'bg-emerald-500';
+            const progressWidth = Math.min(Math.abs(roiPercent), 100);
+
+            if (ipo.status === "ongoing") {
+                return `
+                    <div class="bg-white dark:bg-carddark rounded-[2rem] p-6 md:p-8 flex flex-col relative overflow-hidden transition-all shadow-sm border border-slate-200/60 dark:border-slate-800/80 active:scale-[0.98]">
+                        <div class="absolute top-0 left-0 w-1.5 h-full ${borderLine}"></div>
+                        <div class="flex justify-between items-start gap-3 mb-5 pl-2">
+                            <div><h3 class="text-[17px] font-black text-slate-800 dark:text-slate-100 tracking-tight">${dispName}</h3><span class="inline-block text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1.5 flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> ${formatDate(ipo.date)}</span></div>
+                            <button onclick="showIPODetails('${ipo.id}')" class="bg-slate-50 dark:bg-surface text-slate-600 dark:text-slate-300 text-[10px] font-black py-2.5 px-5 rounded-xl uppercase transition-colors shrink-0 tracking-[0.15em] border border-slate-100 dark:border-slate-800">Kişiler / Sat</button>
+                        </div>
+                        <div class="mb-6 bg-slate-50 dark:bg-surface rounded-2xl p-4 ml-2 border border-slate-100 dark:border-slate-800/50 flex justify-between items-center shadow-inner">
+                            <div><span class="block text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Ana Para</span><span class="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight">${formatTL(ipo.invested)}</span></div>
+                            <button onclick="deleteIPO('${ipo.id}')" class="bg-white dark:bg-carddark hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-500 p-3 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors text-sm">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                        <div class="mb-6 ml-2 relative">
+                            <label class="block text-slate-500 dark:text-slate-400 text-[10px] font-bold mb-2.5 uppercase tracking-widest">Yükseliş Oranı (%)</label>
+                            <input type="number" inputmode="decimal" step="any" autocomplete="off" value="${ipo.percentage || ''}" class="w-full bg-white dark:bg-surface border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-${colorClass}-500 rounded-[1.25rem] p-4 text-2xl font-black text-${colorClass}-600 dark:text-${colorClass}-400 outline-none transition-all shadow-sm" placeholder="0" oninput="calcIPOProfit('${ipo.id}', this.value)">
+                        </div>
+                        <div class="p-5 rounded-2xl border mb-7 ml-2 bg-${colorClass}-50/50 dark:bg-${colorClass}-900/10 border-${colorClass}-100 dark:border-${colorClass}-900/30">
+                            <div class="flex justify-between items-center mb-3"><span class="font-bold text-[11px] uppercase tracking-widest text-${colorClass}-800/60 dark:text-${colorClass}-400/60">Yeni Değer</span><span id="tot-${ipo.id}" class="font-black text-base text-${colorClass}-800 dark:text-${colorClass}-400">${formatTL(ipo.total)}</span></div>
+                            <div class="flex justify-between items-center"><span class="text-slate-500 dark:text-slate-400 font-bold text-[11px] uppercase tracking-widest">Anlık Durum</span><span id="prof-${ipo.id}" class="font-black text-xl ${pC}">${sign}${formatTL(ipo.profit)}</span></div>
+                        </div>
+                        <div class="pl-2 mt-auto"><button onclick="setIPOStatus('${ipo.id}', 'completed')" class="w-full bg-slate-900 dark:bg-indigo-600 hover:bg-black dark:hover:bg-indigo-500 text-white font-black py-4.5 rounded-[1.25rem] active:scale-95 transition-all text-xs uppercase tracking-[0.25em] shadow-lg">TÜMÜNÜ SAT</button></div>
+                    </div>`;
+            } else {
+                const lossBg = isLoss ? 'bg-rose-50/50 dark:bg-rose-900/10' : 'bg-emerald-50/50 dark:bg-emerald-900/10'; const lossBorder = isLoss ? 'border-rose-100 dark:border-rose-900/30' : 'border-emerald-100 dark:border-emerald-900/30';
+                return `
+                    <div class="bg-white dark:bg-carddark rounded-[2rem] p-6 md:p-8 flex flex-col relative overflow-hidden transition-all shadow-sm border border-slate-200/60 dark:border-slate-800/80">
+                        <div class="absolute top-0 left-0 w-1.5 h-full ${isLoss ? 'bg-rose-400' : 'bg-emerald-400'}"></div>
+                        <div class="flex justify-between items-start gap-3 mb-5 pl-2">
+                            <div><h3 class="text-[17px] font-black text-slate-800 dark:text-slate-100 tracking-tight line-clamp-2">${dispName}</h3><span class="inline-block text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1.5 flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> ${formatDate(ipo.date)}</span></div>
+                            <div class="flex gap-2 shrink-0">
+                                <button onclick="setIPOStatus('${ipo.id}', 'ongoing')" class="bg-slate-50 dark:bg-surface border border-slate-100 dark:border-slate-800 text-amber-600 dark:text-amber-500 text-sm p-3 rounded-xl transition-colors active:scale-90 shadow-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                                </button>
+                                <button onclick="showIPODetails('${ipo.id}')" class="bg-slate-50 dark:bg-surface border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-black py-2.5 px-4 rounded-xl uppercase transition-colors shrink-0 tracking-widest shadow-sm">Kişiler</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6 pl-2">
+                            <div class="flex justify-between items-center mb-2"><span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Yatırım Getirisi (ROI)</span><span class="text-[11px] font-black ${pC}">${sign}${roiPercent.toFixed(2)}%</span></div>
+                            <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden"><div class="h-full ${progressColor} rounded-full transition-all duration-500" style="width: ${progressWidth}%"></div></div>
+                        </div>
+
+                        <div class="flex flex-col gap-3 text-xs mb-6 pl-2"><div class="flex justify-between border-b border-slate-100 dark:border-slate-800/50 pb-3"><span class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-[10px]">Ana Para</span><span class="font-black text-slate-700 dark:text-slate-300 text-sm">${formatTL(ipo.invested)}</span></div><div class="flex justify-between pt-1"><span class="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-[10px]">Satış</span><span class="font-black text-slate-700 dark:text-slate-300 text-sm">${formatTL(ipo.total)}</span></div></div>
+                        <div class="flex justify-between items-center ${lossBg} p-5 rounded-2xl ${lossBorder} mt-auto ml-2 border"><span class="text-slate-500 dark:text-slate-400 font-bold text-[11px] uppercase tracking-widest">${isLoss ? 'Zarar' : 'Net Kazanç'}</span><span class="font-black ${pC} text-2xl">${sign}${formatTL(ipo.profit)}</span></div>
+                    </div>`;
+            }
+        };
+
+        const renderIPO_UI = () => {
+            let oH = '', cH = '', oOH = '', oCH = '';
+            let sortedDB = sortData([...dbIPO], sortPrefOngoing);
+            let sortedDBComp = sortData([...dbIPO], sortPrefCompleted);
+            sortedDB.forEach(i => { if(i.status === "ongoing") oH += genIPOCard(i, false); });
+            sortedDBComp.forEach(i => { if(i.status === "completed") cH += genIPOCard(i, false); });
+            dbOther.forEach(i => { if(i.status === "ongoing") oOH += genIPOCard(i, true); else oCH += genIPOCard(i, true); });
+
+            const empty = '<div class="col-span-full text-center text-slate-400 dark:text-slate-600 text-[11px] font-bold py-10 uppercase tracking-widest border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem]">Kayıt Bulunmuyor</div>';
+            document.getElementById("ongoing-container").innerHTML = oH || empty;
+            document.getElementById("completed-container").innerHTML = cH || empty;
+            document.getElementById("other-ongoing-container").innerHTML = oOH || empty;
+            document.getElementById("other-completed-container").innerHTML = oCH || empty;
+            updateIPODashboard();
+        };
+
+        const calcIPOProfit = (id, val) => {
+            const perc = parseFloat(val.replace(',', '.')) || 0;
+            let isOth = false; let idx = dbIPO.findIndex(i => i.id === id);
+            if(idx === -1) { idx = dbOther.findIndex(i => i.id === id); isOth = true; }
+            if(idx > -1) {
+                const dbT = isOth ? dbOther : dbIPO;
+                recalcIPO(dbT[idx], perc); saveIPODB();
+                const elTot = document.getElementById(`tot-${id}`); const elProf = document.getElementById(`prof-${id}`);
+                if(elTot) elTot.innerText = formatTL(dbT[idx].total);
+                if(elProf) {
+                    const lss = dbT[idx].profit < 0; 
+                    elProf.className = `font-black ${lss ? 'text-rose-500' : 'text-emerald-500'} text-xl`;
+                    elProf.innerText = `${lss ? '' : '+'}${formatTL(dbT[idx].profit)}`;
+                }
+                updateIPODashboard();
+            }
+        };
+        const recalcIPO = (ipo, newPerc) => {
+            if(newPerc !== undefined) ipo.percentage = newPerc;
+            let act = 0, lProf = 0, lTot = 0, allSold = true;
+            ipo.participants.forEach(p => { if(!p.isSold) { act += p.initialAmount; allSold = false; } else { lProf += p.soldProfit; lTot += p.soldTotal; } });
+            ipo.profit = (act * ((ipo.percentage||0)/100)) + lProf; ipo.total = ipo.invested + ipo.profit;
+            if(allSold && ipo.participants.length > 0 && ipo.status === 'ongoing') { ipo.status = 'completed'; return true; }
+            return false;
+        };
+        const setIPOStatus = (id, status) => {
+            let isOth = false; let idx = dbIPO.findIndex(i => i.id === id); if(idx === -1) { idx = dbOther.findIndex(i => i.id === id); isOth = true; }
+            if(idx > -1) {
+                const ipo = isOth ? dbOther[idx] : dbIPO[idx];
+                if(status === 'completed') { ipo.participants.forEach(p => { if(!p.isSold) { p.isSold = true; p.soldProfit = p.initialAmount * ((ipo.percentage||0)/100); p.soldTotal = p.initialAmount + p.soldProfit; }}); }
+                else { ipo.participants.forEach(p => { p.isSold = false; p.soldProfit = 0; p.soldTotal = 0; }); }
+                ipo.status = status; recalcIPO(ipo); saveIPODB(); renderIPO_UI(); switchTab(isOth ? 'other' : status);
+            }
+        };
+        const deleteIPO = (id) => { if(confirm("Silinsin mi?")) { dbIPO = dbIPO.filter(i => i.id !== id); dbOther = dbOther.filter(i => i.id !== id); saveIPODB(); renderIPO_UI(); } };
+        const sellPart = (iId, pId) => {
+            let isOth = false; let ipo = dbIPO.find(i => i.id === iId); if(!ipo) { ipo = dbOther.find(i => i.id === iId); isOth = true; }
+            if(!ipo) return; let p = ipo.participants.find(x => x.id === pId); if(!p) return;
+            if(!confirm(`Satılsın mı?`)) return;
+            p.isSold = true; p.soldProfit = p.initialAmount * ((ipo.percentage||0)/100); p.soldTotal = p.initialAmount + p.soldProfit;
+            if(recalcIPO(ipo)) { saveIPODB(); closeModal('details-modal'); renderIPO_UI(); switchTab(isOth ? 'other' : 'completed'); } 
+            else { saveIPODB(); renderIPO_UI(); showIPODetails(iId); }
+        };
+
+        const ipoAddRows = ["Sait Demir - Burgan", "Yunus Emre Demir - Ziraat", "Gülseren Hançar - Garanti", "Halil Demir - OYAK", "Ali Demir - OYAK", "Hüseyin Demir - Garanti", "Yusuf Demir - Garanti", "Sevda Demir - BTC Türk", "Nuran Demir - Akbank", "Orhan Demir - Deniz Bank", "Meral Demir - Vakıfbank", "Hilal Ertürk - Ziraat"];
+        let ipoRC = 0;
+        const addIPORow = (def="") => {
+            ipoRC++;
+            document.getElementById("participants-container").insertAdjacentHTML('beforeend', `
+                <div id="ir-${ipoRC}" class="bg-white dark:bg-surface p-3 rounded-2xl border border-slate-200 dark:border-slate-800/80 flex gap-3 items-center shadow-sm">
+                    <input type="text" value="${def}" class="p-name flex-1 border-none bg-slate-50 dark:bg-carddark rounded-xl p-3 text-[11px] font-bold outline-none uppercase tracking-wide text-slate-800 dark:text-slate-200" placeholder="İsim">
+                    <input type="number" inputmode="decimal" class="p-amount w-28 border-none bg-indigo-50/50 dark:bg-indigo-900/20 rounded-xl p-3 text-[12px] font-black text-indigo-600 dark:text-indigo-400 outline-none" placeholder="0.00" oninput="calcIPOTot()">
+                    <button onclick="document.getElementById('ir-${ipoRC}').remove(); calcIPOTot();" class="text-slate-300 hover:text-rose-500 px-2 font-black text-xl active:scale-90 transition-all">&times;</button>
+                </div>`);
+        };
+        const calcIPOTot = () => { let s = 0; document.querySelectorAll('.p-amount').forEach(e => { s += parseFloat(e.value)||0; }); document.getElementById("new-ipo-total").innerText = formatTL(s); };
         
-        document.getElementById("islem-gecmisi").innerHTML = html;
-    }
+        const openSmartAddModal = () => {
+            currentAddTarget = currentIPOTab === 'other' ? 'other' : 'main';
+            document.getElementById("participants-container").innerHTML = ''; document.getElementById("new-ipo-name").value = ''; document.getElementById("new-ipo-date").valueAsDate = new Date(); document.getElementById("new-ipo-total").innerText = '0,00 ₺'; ipoRC = 0;
+            if(currentAddTarget === 'other') { addIPORow("Emine - Kendi Hesabı"); } else { ipoAddRows.forEach(n => addIPORow(n)); }
+            openModal('add-modal');
+        };
+        const saveNewIPO = () => {
+            const name = document.getElementById("new-ipo-name").value.trim(); const date = document.getElementById("new-ipo-date").value;
+            let sum = 0; let pArr = [];
+            document.querySelectorAll('#participants-container > div').forEach((r,i) => {
+                const n = r.querySelector('.p-name').value.trim()||'İsimsiz'; const a = parseFloat(r.querySelector('.p-amount').value)||0;
+                if(a>0){ sum+=a; pArr.push({id:'p_'+Date.now()+'_'+i, name:n, initialAmount:a, isSold:false, soldProfit:0, soldTotal:0}); }
+            });
+            if(!name || sum<=0) return alert("Bilgiler eksik!");
+            const nIPO = { id:(currentAddTarget==='other'?"e_ipo_":"ipo_")+Date.now(), name:name.toUpperCase(), date:date, status:"ongoing", invested:sum, percentage:0, profit:0, total:sum, participants:pArr };
+            if(currentAddTarget==='other'){ dbOther.unshift(nIPO); saveIPODB(); renderIPO_UI(); closeModal('add-modal'); switchTab('other'); }
+            else { dbIPO.unshift(nIPO); saveIPODB(); renderIPO_UI(); closeModal('add-modal'); switchTab('ongoing'); }
+        };
 
-    tablolariCiz();
-</script>
+        const showIPODetails = (id) => {
+            let ipo = dbIPO.find(i=>i.id===id) || dbOther.find(i=>i.id===id); if(!ipo) return;
+            let dispName = ipo.name.split(' (')[0]; if(dispName === 'Z GYO' || dispName === 'Z') dispName = 'Z GAYRİMENKUL';
+            document.getElementById("modal-title").innerText = dispName;
+            let html = ipo.status==='ongoing' ? `<div class="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-[11px] font-black uppercase text-center py-4 rounded-[1.25rem] mb-5 tracking-widest border border-indigo-100 dark:border-indigo-800/50 shadow-sm">Anlık Yükseliş: %${ipo.percentage||0}</div>` : '';
+            ipo.participants.forEach((p,i) => {
+                let act = p.isSold ? `<div class="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase px-3.5 py-3 rounded-xl flex flex-col items-end shrink-0 border border-emerald-100 dark:border-emerald-800/50 shadow-sm"><span class="flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> SATILDI</span><span class="mt-0.5">${p.soldProfit>=0?'+':''}${formatTL(p.soldProfit)}</span></div>` : (ipo.status==='ongoing'?`<button onclick="sellPart('${ipo.id}','${p.id}')" class="bg-slate-800 dark:bg-indigo-600 text-white text-[10px] font-black uppercase px-5 py-3.5 rounded-xl shadow-md active:scale-95 shrink-0 tracking-[0.2em] transition-all">SAT</button>`:`<span class="text-slate-300 dark:text-slate-600 font-black px-3">-</span>`);
+                html += `<div class="bg-white dark:bg-surface p-4 rounded-2xl border border-slate-100 dark:border-slate-800/50 flex justify-between items-center shadow-sm mb-3.5"><div class="flex items-center gap-4 overflow-hidden flex-1"><span class="bg-slate-50 dark:bg-carddark text-slate-500 dark:text-slate-400 text-[11px] font-black w-10 h-10 flex shrink-0 items-center justify-center rounded-full border border-slate-100 dark:border-slate-800/80 shadow-inner">${i+1}</span><div class="truncate"><div class="font-bold text-slate-700 dark:text-slate-200 text-[13px] truncate tracking-wide">${p.name}</div><div class="text-[11px] font-black text-slate-400 dark:text-slate-500 mt-1">${formatTL(p.initialAmount)}</div></div></div>${act}</div>`;
+            });
+            document.getElementById("modal-content-area").innerHTML = html; openModal('details-modal');
+        };
 
+        // =========================================================================
+        // BÖLÜM 2: MİDAS BORSA (STOCKS)
+        // =========================================================================
+        const defaultStockData = [ { tarih: "2026-02-09", hisse: "UCAY", adet: 5, fiyat: 36.32 }, { tarih: "2026-02-09", hisse: "FORMT", adet: 5, fiyat: 39.18 }, { tarih: "2026-02-09", hisse: "MEYSU", adet: 5, fiyat: 15.84 }, { tarih: "2026-02-09", hisse: "ARFBE", adet: 5, fiyat: 29.98 }, { tarih: "2026-02-09", hisse: "THYAO", adet: 2, fiyat: 326.50 }, { tarih: "2026-02-09", hisse: "TUPRS", adet: 1, fiyat: 222.70 }, { tarih: "2026-02-09", hisse: "GRSEL", adet: 1, fiyat: 352.25 }, { tarih: "2026-02-09", hisse: "ASTOR", adet: 1, fiyat: 154.30 }, { tarih: "2026-02-09", hisse: "ENKAI", adet: 1, fiyat: 96.90 }, { tarih: "2026-02-09", hisse: "TABGD", adet: 1, fiyat: 257.00 }, { tarih: "2026-02-09", hisse: "PGSUS", adet: 1, fiyat: 209.30 }, { tarih: "2026-02-09", hisse: "AKSEN", adet: 1, fiyat: 69.25 }, { tarih: "2026-02-09", hisse: "GARAN", adet: 1, fiyat: 157.30 }, { tarih: "2026-02-09", hisse: "TCELL", adet: 1, fiyat: 115.90 }, { tarih: "2026-02-09", hisse: "OYAKC", adet: 1, fiyat: 26.14 }, { tarih: "2026-02-09", hisse: "ALTNY", adet: 1, fiyat: 15.73 }, { tarih: "2026-02-09", hisse: "AKSEN", adet: 2, fiyat: 69.10 }, { tarih: "2026-02-09", hisse: "OYAKC", adet: 2, fiyat: 26.12 }, { tarih: "2026-02-09", hisse: "ALTNY", adet: 1, fiyat: 15.71 }, { tarih: "2026-03-11", hisse: "GRSEL", adet: 2, fiyat: 329.00 }, { tarih: "2026-03-11", hisse: "TUPRS", adet: 3, fiyat: 253.25 }, { tarih: "2026-03-11", hisse: "ASTOR", adet: 3, fiyat: 191.50 }, { tarih: "2026-03-11", hisse: "AKSEN", adet: 5, fiyat: 72.60 }, { tarih: "2026-03-11", hisse: "ENKAI", adet: 5, fiyat: 91.30 }, { tarih: "2026-03-11", hisse: "TCELL", adet: 3, fiyat: 110.00 }, { tarih: "2026-03-18", hisse: "AKSA", adet: 84, fiyat: 11.21 }, { tarih: "2026-03-18", hisse: "GRSEL", adet: 1, fiyat: 324.25 }, { tarih: "2026-03-18", hisse: "ASELS", adet: 3, fiyat: 354.75 }, { tarih: "2026-03-18", hisse: "PGSUS", adet: 6, fiyat: 179.70 }, { tarih: "2026-03-18", hisse: "AKSEN", adet: 5, fiyat: 79.70 }, { tarih: "2026-03-18", hisse: "AKSA", adet: 9, fiyat: 11.19 } ];
+        let dbStocks = JSON.parse(localStorage.getItem('portfoyVerisi_v29')) || defaultStockData;
+        const saveStocksDB = () => localStorage.setItem('portfoyVerisi_v29', JSON.stringify(dbStocks));
+        let stockChart = null;
+        
+        const renderStockPortfolioChart = () => {
+            let genel = {}; dbStocks.forEach(s => { let tutar = s.adet * s.fiyat; if(!genel[s.hisse]) genel[s.hisse] = 0; genel[s.hisse] += tutar; });
+            const sD = Object.entries(genel).sort((a,b)=>b[1]-a[1]).slice(0, 8); const labels = sD.map(d => d[0]); const dataValues = sD.map(d => d[1]);
+            const ctx = document.getElementById('portfolioChart'); if(!ctx) return;
+            const isDark = document.documentElement.classList.contains('dark');
+            if(stockChart) stockChart.destroy();
+            stockChart = new Chart(ctx, { type: 'doughnut', data: { labels: labels, datasets: [{ data: dataValues, backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#64748b'], borderWidth: isDark ? 2 : 0, borderColor: isDark ? '#131316' : '#ffffff' }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { position: 'right', labels: { color: isDark ? '#94a3b8' : '#475569', font: { family: 'Inter', size: 10, weight: 'bold' }, padding: 15 } } } } });
+        };
+        const switchStockTab = (tabId) => {
+            document.querySelectorAll('#app-wrapper-stocks .app-view-stock').forEach(view => view.classList.add('hidden')); document.getElementById(`view-stocks-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn-stock').forEach(btn => { btn.classList.remove('text-emerald-600', 'dark:text-emerald-400'); btn.classList.add('text-slate-400', 'dark:text-slate-500'); });
+            const aB = document.getElementById(`tab-stocks-${tabId}`); if(aB) { aB.classList.remove('text-slate-400', 'dark:text-slate-500'); aB.classList.add('text-emerald-600', 'dark:text-emerald-400'); }
+            document.getElementById('main-scroll').scrollTo({ top: 0, behavior: 'smooth' });
+            if(tabId === 'dashboard') renderStockPortfolioChart();
+        };
+        const renderStocksUI = () => {
+            let aylik = {}; let genel = {}; let genTot = 0;
+            dbStocks.forEach(s => {
+                let tutar = s.adet * s.fiyat; genTot += tutar;
+                let tParts = s.tarih.split("-"); let yil = tParts[0]; let ay = parseInt(tParts[1], 10); let ayKey = `${yil}-${ay.toString().padStart(2, '0')}`;
+                if(!aylik[ayKey]) aylik[ayKey] = { yil:yil, ay:ay, hisseler:{} }; if(!aylik[ayKey].hisseler[s.hisse]) aylik[ayKey].hisseler[s.hisse] = { adet:0, tutar:0 };
+                aylik[ayKey].hisseler[s.hisse].adet += s.adet; aylik[ayKey].hisseler[s.hisse].tutar += tutar;
+                if(!genel[s.hisse]) genel[s.hisse] = { adet:0, tutar:0 }; genel[s.hisse].adet += s.adet; genel[s.hisse].tutar += tutar;
+            });
+            document.getElementById("stocks-total-investment").innerText = formatTL(genTot);
+            renderStockPortfolioChart();
+            let distHTML = '';
+            Object.entries(genel).sort((a,b)=>b[1].tutar - a[1].tutar).slice(0,5).forEach(([h, v], idx) => { distHTML += `<div class="bg-white dark:bg-carddark rounded-[1.25rem] p-5 shadow-sm border border-slate-200/60 dark:border-slate-800/80 flex justify-between items-center"><div class="flex items-center gap-4"><div class="w-8 h-8 flex items-center justify-center bg-emerald-50 dark:bg-emerald-900/30 rounded-full text-xs font-black text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-slate-800/50">${idx+1}</div><span class="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">${h}</span></div><span class="font-black text-emerald-600 dark:text-emerald-400 text-[15px] tracking-tight">${formatTL(v.tutar)}</span></div>`; });
+            document.getElementById("stocks-distribution").innerHTML = distHTML || '<div class="text-center p-6 text-slate-400 text-xs font-bold uppercase tracking-widest bg-white dark:bg-carddark rounded-2xl border border-slate-200 dark:border-slate-800">Kayıt yok.</div>';
+            let histHTML = ''; let kopyasi = dbStocks.map((islem, index) => ({...islem, gId: index})).reverse();
+            kopyasi.forEach(s => { let p = s.tarih.split("-"); let t = `${p[2]}.${p[1]}`; histHTML += `<div class="bg-white dark:bg-carddark p-5 rounded-[1.25rem] border border-slate-200/60 dark:border-slate-800/80 flex justify-between items-center shadow-sm"><div class="flex flex-col"><span class="text-[9px] font-bold text-slate-400 mb-1.5 uppercase tracking-[0.15em] flex items-center gap-1.5"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> ${t}</span><span class="text-[15px] font-black text-slate-800 dark:text-slate-100 tracking-tight">${s.hisse}</span><span class="text-[10px] font-bold text-slate-500 mt-1">${s.adet} Lot x ${formatTL(s.fiyat)}</span></div><div class="flex flex-col items-end gap-2.5"><span class="font-black text-emerald-600 dark:text-emerald-400 text-base tracking-tight">${formatTL(s.adet*s.fiyat)}</span><button onclick="delStock(${s.gId})" class="bg-slate-50 dark:bg-surface hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-500 hover:text-rose-500 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-colors shadow-sm">SİL</button></div></div>`; });
+            document.getElementById("stocks-history-container").innerHTML = histHTML || '<div class="text-center p-6 text-slate-400 text-xs font-bold uppercase tracking-widest bg-white dark:bg-carddark rounded-2xl border border-slate-200 dark:border-slate-800">Kayıt yok.</div>';
+            let aylikHTML = ''; Object.keys(aylik).sort().reverse().forEach(k => { let d = aylik[k]; let aT = 0; let trs = ''; Object.entries(d.hisseler).sort((a,b)=>b[1].tutar - a[1].tutar).forEach(([h, v]) => { aT += v.tutar; trs += `<tr><td class="dark:text-slate-300">${h}</td><td class="dark:text-slate-300">${v.adet}</td><td class="dark:text-slate-300">${formatTL(v.tutar/v.adet)}</td><td class="dark:text-slate-300">${formatTL(v.tutar)}</td></tr>`; }); aylikHTML += `<div class="bg-white dark:bg-carddark rounded-[2rem] p-6 shadow-sm border border-slate-200/60 dark:border-slate-800/80"><h3 class="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase mb-4 px-1 tracking-widest">${monthNames[d.ay]} ${d.yil}</h3><div class="overflow-x-auto no-scrollbar"><table class="w-full"><thead><tr><th>Hisse</th><th>Adet</th><th>Ort.</th><th>Tutar</th></tr></thead><tbody>${trs}</tbody></table></div><div class="mt-5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-400 p-4.5 rounded-[1.25rem] text-center font-black text-[11px] uppercase tracking-[0.2em] shadow-inner border border-emerald-100 dark:border-emerald-800/50">Aylık Toplam: ${formatTL(aT)}</div></div>`; });
+            document.getElementById("stocks-monthly-container").innerHTML = aylikHTML || '<div class="text-center p-6 text-slate-400 text-xs font-bold uppercase tracking-widest bg-white dark:bg-carddark rounded-2xl border border-slate-200 dark:border-slate-800">Kayıt yok.</div>';
+            let genTrs = ''; Object.entries(genel).sort((a,b)=>b[1].tutar - a[1].tutar).forEach(([h, v]) => { genTrs += `<tr><td class="dark:text-slate-300">${h}</td><td class="dark:text-slate-300">${v.adet}</td><td class="dark:text-slate-300">${formatTL(v.tutar/v.adet)}</td><td class="text-emerald-600 dark:text-emerald-400">${formatTL(v.tutar)}</td></tr>`; });
+            document.querySelector("#stocks-general-table tbody").innerHTML = genTrs;
+        };
+        const delStock = (i) => { if(confirm("İşlem silinsin mi?")) { dbStocks.splice(i, 1); saveStocksDB(); renderStocksUI(); } };
+        const openStockAddModal = () => { document.getElementById("stock-date").valueAsDate = new Date(); document.getElementById("stock-ticker").value = ''; document.getElementById("stock-qty").value = ''; document.getElementById("stock-price").value = ''; openModal('add-stock-modal'); };
+        const saveStockTransaction = () => { let t = document.getElementById("stock-date").value; let h = document.getElementById("stock-ticker").value.trim().toUpperCase(); let a = parseInt(document.getElementById("stock-qty").value); let f = parseFloat(document.getElementById("stock-price").value.replace(',','.')); if(!t || !h || isNaN(a) || isNaN(f)) return alert("Eksik bilgi!"); dbStocks.push({ tarih:t, hisse:h, adet:a, fiyat:f }); saveStocksDB(); renderStocksUI(); closeModal('add-stock-modal'); switchStockTab('history'); };
+
+        // INIT
+        window.onload = () => { switchAppMode('ipo'); setTimeout(renderIPOHistoricalChart, 100); };
+    </script>
 </body>
 </html>
