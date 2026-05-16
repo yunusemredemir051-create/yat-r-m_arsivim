@@ -113,6 +113,49 @@
 </div>
 
 <script>
+    // ==========================================
+    // YENİ EKLENEN ÖZELLİKLER (Halka Arz ve Tarih)
+    // ==========================================
+    
+    // 1. Halka Arz Fiyatları Sözlüğü
+    const halkaArzFiyatlari = {
+        "ARFYE": 19.50,
+        "MEYSU": 7.50,
+        "ZGYO": 9.77,
+        "FRMPL": 30.24,
+        "UCAYM": 18.00,
+        "NETCD": 46.00,
+        "AKHAN": 21.50,
+        "BESTE": 14.70,
+        "ATATR": 11.20,
+        "EMPAE": 22.00,
+        "SVGYO": 3.64,
+        "GENKM": 11.00,
+        "LXGYO": 12.05,
+        "MCARD": 80.00,
+        "AAGYO": 21.10
+    };
+
+    // 2. Sayfa yüklendiğinde çalışacak başlangıç ayarları
+    document.addEventListener("DOMContentLoaded", function() {
+        // Tarih kutusunu bugünün tarihi ile doldur
+        document.getElementById("tarih").valueAsDate = new Date();
+
+        // Hisse kutusunu dinle ve fiyatı otomatik doldur
+        document.getElementById("hisse").addEventListener("input", function() {
+            let girilenHisse = this.value.trim().toUpperCase();
+            
+            // Eğer yazılan hisse listemizde varsa, fiyatı yazdır
+            if (halkaArzFiyatlari[girilenHisse] !== undefined) {
+                document.getElementById("fiyat").value = halkaArzFiyatlari[girilenHisse];
+            }
+        });
+    });
+
+    // ==========================================
+    // ORİJİNAL KODLARINIZ BURADAN İTİBAREN BAŞLAR
+    // ==========================================
+
     // Önceki veriler (18 Mart Dahil)
     const varsayilanIslemler = [
         { tarih: "2026-02-09", hisse: "UCAY", adet: 5, fiyat: 36.32 },
@@ -199,7 +242,8 @@
         
         document.getElementById("hisse").value = "";
         document.getElementById("adet").value = "";
-        document.getElementById("fiyat").value = "";
+        // Fiyatı da temizleyelim ama tarihi temizlemiyoruz ki bugünde kalsın
+        document.getElementById("fiyat").value = ""; 
         
         tablolariCiz();
         alert("✅ İşlem başarıyla eklendi!");
